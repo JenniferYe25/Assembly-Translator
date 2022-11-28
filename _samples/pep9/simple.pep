@@ -1,5 +1,5 @@
          BR program
-x: .block 2 
+x: .BLOCK 2 
 program: LDWA 3, i
          ADDA 2, i
          STWA x, d

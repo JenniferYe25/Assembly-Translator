@@ -15,6 +15,3 @@ program: DECI value, d
          STWA result, d
          DECO result, d
          .END 
-         
-         
-         
