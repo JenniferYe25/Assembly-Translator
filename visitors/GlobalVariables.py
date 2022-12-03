@@ -14,28 +14,42 @@ class GlobalVariableExtraction(ast.NodeVisitor):
         self.gen = self.get_name()
 
     def visit_Assign(self, node):
+        # print(dir(node.value))
         if len(node.targets) != 1:
             raise ValueError("Only unary assignments are supported")
 
         var = node.targets[0].id
-
-        if (len(var)> 8 ):  #checks if the variable name is greater than 8 characters long
-            name = self.get_next()
-            if (var[0] == '_'): #preserves constant naming convention
-                if len(name) > 8:
-                    var = var[0]+(name[:-1]).upper()
+        if (var not in self.vars):
+            if (len(var)> 8):  #checks if the variable name is greater than 8 characters long
+                name = self.get_next()
+                if (var[0] == '_'): #preserves constant naming convention
+                    if len(name) > 8:
+                        var = var[0]+(name[:-1]).upper()
+                    else:
+                        var = var[0]+name.upper()
                 else:
-                    var = var[0]+name.upper()
-            else:
-                var = name
-                  
-        self.vars.add(var)
-        node.targets[0].id = var
+                    var = name
+                    
+            node.targets[0].id = var
 
-        if hasattr(node.value, 'value'):
-            self.results.add((node.targets[0].id, node.value.value))
-        else:
-            self.results.add(node.targets[0].id)
+            if hasattr(node.value, 'value'):
+                self.results.add((node.targets[0].id, node.value.value))
+                self.vars.add(node.targets[0].id)
+            else:
+                self.results.add(node.targets[0].id)
+                self.vars.add(node.targets[0].id)
+
+                
+
+    def visit_While(self, node):
+        if(node.test.left.id in self.vars): # ensure iterator variables are set to 1 by default
+            for var in self.results: # must iterate since set of tuples and strings
+                if (type(var) is tuple) and (var[0] == node.test.left.id and var[1] < 1): 
+                    self.results.remove(var)
+                    self.results.add((node.test.left.id, 1))
+
+        for contents in node.body:
+            self.visit(contents)
 
     def visit_FunctionDef(self, node):
         """We do not visit function definitions, they are not global by definition"""
