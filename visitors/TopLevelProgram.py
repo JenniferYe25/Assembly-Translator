@@ -75,7 +75,7 @@ class TopLevelProgram(ast.NodeVisitor):
             ast.GtE: 'BRLT', # '>=' in the code means we branch if '<'
         }
         # left part can only be a variable
-        self.__access_memory(node.test.left, 'LDWA', label = f'test_{loop_id}')
+        self.__access_memory(node.test.left, 'LDWA', label = f't_{loop_id}')
         # right part can only be a variable
         self.__access_memory(node.test.comparators[0], 'CPWA')
         # Branching is condition is not true (thus, inverted)
@@ -111,4 +111,5 @@ class TopLevelProgram(ast.NodeVisitor):
     def __identify(self):
         result = self.__elem_id
         self.__elem_id = self.__elem_id + 1
+
         return result
