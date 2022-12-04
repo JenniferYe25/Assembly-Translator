@@ -10,11 +10,10 @@ class GlobalVariableExtraction(ast.NodeVisitor):
     def __init__(self) -> None:
         super().__init__()
         self.results = set()
-        self.vars = set()
+        self.vars = dict()
         self.gen = self.get_name()
 
     def visit_Assign(self, node):
-        # print(dir(node.value))
         if len(node.targets) != 1:
             raise ValueError("Only unary assignments are supported")
 
@@ -29,15 +28,14 @@ class GlobalVariableExtraction(ast.NodeVisitor):
                         var = var[0]+name.upper()
                 else:
                     var = name
+            self.vars[node.targets[0].id] = var
                     
             node.targets[0].id = var
 
             if hasattr(node.value, 'value'):
                 self.results.add((node.targets[0].id, node.value.value))
-                self.vars.add(node.targets[0].id)
             else:
                 self.results.add(node.targets[0].id)
-                self.vars.add(node.targets[0].id)
 
                 
 

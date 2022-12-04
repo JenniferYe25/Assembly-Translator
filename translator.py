@@ -31,7 +31,7 @@ def process(input_file, root_node):
     print('; Branching to top level (tl) instructions')
     print('\t\tBR tl')
     memory_alloc.generate()
-    top_level = TopLevelProgram('tl')
+    top_level = TopLevelProgram('tl', extractor.vars)
     top_level.visit(root_node)
     ep = EntryPoint(top_level.finalize())
     ep.generate() 
