@@ -8,14 +8,14 @@ test:    LDWA    a,d
          BREQ    end         
 test_if: LDWA    a,d         
          CPWA    b,d         
-         BRGT    if_r        
+         BRLE    else
+         LDWA    a,d         
+         SUBA    b,d         
+         STWA    a,d                
+         BR      test
 else:    LDWA    b,d         
          SUBA    a,d         
          STWA    b,d 
-         BR      test        
-if_r:    LDWA    a,d         
-         SUBA    b,d         
-         STWA    a,d                
-         BR      test        
+         BR      test                
 end:     DECO    a,d         
          .END                  
