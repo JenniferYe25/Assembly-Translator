@@ -1,13 +1,13 @@
          BR      program
 _UNIV:   .WORD 42
-value:   .BLOCK 2
+value:   .EQUATE 2
 result:  .EQUATE 0
 my_func: SUBSP 4,i
-         DECI value, d
+         DECI value, s
          LDWA _UNIV, d
-         ADDA value, d
-         STWA result, d
-         DECO result, d
+         ADDA value, s
+         STWA result, s
+         DECO result, s
          ADDSP 4, i
          RET
 program: CALL my_func
