@@ -5,13 +5,14 @@ LabeledInstruction = tuple[str, str]
 class TopLevelProgram(ast.NodeVisitor):
     """We supports assignments and input/print calls"""
     
-    def __init__(self, entry_point) -> None:
+    def __init__(self, entry_point, vars) -> None:
         super().__init__()
         self.__instructions = list()
         self.__record_instruction('NOP1', label=entry_point)
         self.__should_save = True
         self.__current_variable = None
         self.__elem_id = 0
+        self.vars = vars
 
     def finalize(self):
         self.__instructions.append((None, '.END'))
@@ -23,7 +24,7 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         # remembering the name of the target
-        self.__current_variable = node.targets[0].id
+        self.__current_variable = self.__rename(node.targets[0].id)
         # visiting the left part, now knowing where to store the result
         self.visit(node.value)
         if self.__should_save:
@@ -66,26 +67,48 @@ class TopLevelProgram(ast.NodeVisitor):
     ## Handling While loops (only variable OP variable)
     ####
 
-    def visit_While(self, node):
+    def visit_While(self, node, loop_id = ''):
         loop_id = self.__identify()
-        inverted = {
-            ast.Lt:  'BRGE', # '<'  in the code means we branch if '>=' 
-            ast.LtE: 'BRGT', # '<=' in the code means we branch if '>' 
-            ast.Gt:  'BRLE', # '>'  in the code means we branch if '<='
-            ast.GtE: 'BRLT', # '>=' in the code means we branch if '<'
-        }
+        inverted = self.__conditons()
         # left part can only be a variable
         self.__access_memory(node.test.left, 'LDWA', label = f't_{loop_id}')
         # right part can only be a variable
         self.__access_memory(node.test.comparators[0], 'CPWA')
         # Branching is condition is not true (thus, inverted)
         self.__record_instruction(f'{inverted[type(node.test.ops[0])]} end_l_{loop_id}')
+        # print(node.body)
         # Visiting the body of the loop
         for contents in node.body:
             self.visit(contents)
-        self.__record_instruction(f'BR test_{loop_id}')
+        self.__record_instruction(f'BR t_{loop_id}')
         # Sentinel marker for the end of the loop
         self.__record_instruction(f'NOP1', label = f'end_l_{loop_id}')
+    
+    def visit_If(self, node):
+        loop_id = self.__identify()
+        inverted = self.__conditons()
+        self.__access_memory(node.test.left, 'LDWA', label = f'if_{loop_id}')
+        self.__access_memory(node.test.comparators[0], 'CPWA')
+
+        if hasattr(node, 'orelse') and node.orelse != []:
+            if ast.If in [type(i) for i in node.orelse]: # there is an else if 
+                self.__record_instruction(f'{inverted[type(node.test.ops[0])]} if_{loop_id + 1}')
+                for contents in node.body:
+                    self.visit(contents)
+                self.__record_instruction(f'BR end_{loop_id}')
+            else:  # there is an else
+                self.__record_instruction(f'{inverted[type(node.test.ops[0])]} else_{loop_id}')
+                for contents in node.body:
+                    self.visit(contents)
+                self.__record_instruction(f'BR end_{loop_id}')
+                
+                self.__record_instruction(f'NOP1', label = f'else_{loop_id}')
+            for contents in node.orelse:
+                self.visit(contents)
+        else:
+            self.__record_instruction(f'BR end_{loop_id}')
+        
+        self.__record_instruction(f'NOP1', label = f'end_{loop_id}')
 
     ####
     ## Not handling function calls 
@@ -106,10 +129,26 @@ class TopLevelProgram(ast.NodeVisitor):
         if isinstance(node, ast.Constant):
             self.__record_instruction(f'{instruction} {node.value},i', label)
         else:
-            self.__record_instruction(f'{instruction} {node.id},d', label)
+            self.__record_instruction(f'{instruction} {self.__rename(node.id)},d', label)
 
     def __identify(self):
         result = self.__elem_id
         self.__elem_id = self.__elem_id + 1
-
         return result
+    
+    def __conditons(self):
+        inverted = {
+            ast.Lt:  'BRGE', # '<'  in the code means we branch if '>=' 
+            ast.LtE: 'BRGT', # '<=' in the code means we branch if '>' 
+            ast.Gt:  'BRLE', # '>'  in the code means we branch if '<='
+            ast.GtE: 'BRLT', # '>=' in the code means we branch if '<'
+            ast.NotEq: 'BREQ', # '!=' in the code means we branch if '=='
+            ast.Eq: 'BRNE', # '==; in the code means we branch if '!='
+        }
+        return inverted
+    
+    def __rename(self, name):
+        if(name in self.vars):
+            return self.vars.get(name)
+        else:
+            return name
