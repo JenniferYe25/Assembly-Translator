@@ -1,11 +1,12 @@
 import argparse
 import ast
+from visitors.FunctionVariables import LocalVariableExtraction
 from visitors.GlobalVariables import GlobalVariableExtraction
 from visitors.TopLevelProgram import TopLevelProgram
 from visitors.FunctionCalls import FunctionalLevel
-from visitors.FunctionVariables import LocalVariableExtraction
 from generators.StaticMemoryAllocation import StaticMemoryAllocation
 from generators.EntryPoint import EntryPoint
+from generators.TempMemory import TempMemoryAllocation
 
 def main():
     input_file, print_ast = process_cli()
@@ -33,20 +34,30 @@ def process(input_file, root_node):
     print('; Branching to top level (tl) instructions')
     print('\t\tBR tl')
     memory_alloc.generate()
+    # function = LocalVariableExtraction(extractor.vars)
+    # function.visit(root_node)
+    # print(root_node.body)
     top_level = TopLevelProgram('tl', extractor.vars)
     top_level.visit(root_node)
     tlInstruct, funcDef = top_level.finalize()
 
+    proerties = LocalVariableExtraction(extractor.vars)
+    proerties.visit(funcDef[0][1])
+    # print(funcDef[0][1].body)
+    # print(proerties.local)
+    local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, funcDef[0][0])
+    local_alloc.generate()
+    # print(proerties.local)
     fInstruct = []
     for f in funcDef:
-        functional_level = FunctionalLevel(f[0], extractor.vars)
+        functional_level = FunctionalLevel(f[0], proerties.local)
         for node in f[1].body:
             functional_level.visit(node)
         fInstruct = fInstruct + functional_level.finalize()
     
 
-    ep = EntryPoint(fInstruct + tlInstruct)
-    ep.generate() 
+    # ep = EntryPoint(fInstruct + tlInstruct)
+    # ep.generate() 
 
 if __name__ == '__main__':
     main()
