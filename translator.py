@@ -2,6 +2,8 @@ import argparse
 import ast
 from visitors.GlobalVariables import GlobalVariableExtraction
 from visitors.TopLevelProgram import TopLevelProgram
+from visitors.FunctionCalls import FunctionalLevel
+from visitors.FunctionVariables import LocalVariableExtraction
 from generators.StaticMemoryAllocation import StaticMemoryAllocation
 from generators.EntryPoint import EntryPoint
 
@@ -33,7 +35,17 @@ def process(input_file, root_node):
     memory_alloc.generate()
     top_level = TopLevelProgram('tl', extractor.vars)
     top_level.visit(root_node)
-    ep = EntryPoint(top_level.finalize())
+    tlInstruct, funcDef = top_level.finalize()
+
+    fInstruct = []
+    for f in funcDef:
+        functional_level = FunctionalLevel(f[0], extractor.vars)
+        for node in f[1].body:
+            functional_level.visit(node)
+        fInstruct = fInstruct + functional_level.finalize()
+    
+
+    ep = EntryPoint(fInstruct + tlInstruct)
     ep.generate() 
 
 if __name__ == '__main__':

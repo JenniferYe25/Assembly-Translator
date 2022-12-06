@@ -3,7 +3,7 @@ _UNIV:   .WORD 42
 value:   .EQUATE 2
 result:  .EQUATE 0
 my_func: SUBSP 4,i
-         DECI value, s
+         DECI value, i
          LDWA _UNIV, d
          ADDA value, s
          STWA result, s
