@@ -4,7 +4,7 @@ import ast
 class FunctionalLevel(TopLevelProgram):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars, locals=[]) -> None:
+    def __init__(self, entry_point, vars, locals) -> None:
         super().__init__(entry_point, vars)
         self.locals = locals
         self.instructions = [(entry_point,'SUBSP ' +
@@ -18,7 +18,11 @@ class FunctionalLevel(TopLevelProgram):
 
     def visit_Assign(self, node):
         # remembering the name of the target
-        self.current_variable = node.targets[0].id
+        if node.targets[0].id in self.locals:
+            self.current_variable = self.locals[node.targets[0].id]
+        else:
+            self.current_variable = node.targers[0].id
+
         # visiting the left part, now knowing where to store the result
         self.visit(node.value)
         if self.should_save:
@@ -29,6 +33,8 @@ class FunctionalLevel(TopLevelProgram):
 
 
     def visit_Name(self, node):
+        if node.id in self.locals:
+            node.id = self.locals[node.id]
         super().record_instruction(f'LDWA {node.id},s')
 
 
