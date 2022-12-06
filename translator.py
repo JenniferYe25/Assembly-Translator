@@ -50,7 +50,12 @@ def process(input_file, root_node):
         local_alloc.generate()  # generating local vars, args and return
         for node in f[1].body: #translating function body
             functional_level.visit(node)
-        fe = FunctionEntry(functional_level.finalize(), f[0]) 
+        # fInstruct = fInstruct + functional_level.finalize()
+        fe = FunctionEntry( functional_level.finalize(), f[0]) 
         fe.generate()  # printing body before top level  
+    
+    ep = EntryPoint(tlInstruct)
+    ep.generate() 
+
 if __name__ == '__main__':
     main()
