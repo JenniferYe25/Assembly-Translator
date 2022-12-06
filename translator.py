@@ -1,5 +1,6 @@
 import argparse
 import ast
+from generators.FunctionEntry import FunctionEntry
 from visitors.FunctionVariables import LocalVariableExtraction
 from visitors.GlobalVariables import GlobalVariableExtraction
 from visitors.TopLevelProgram import TopLevelProgram
@@ -42,17 +43,18 @@ def process(input_file, root_node):
     proerties = LocalVariableExtraction(extractor.vars)
     proerties.visit(funcDef[0][1])
   
-    local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, funcDef[0][0])
-    local_alloc.generate()
-
     fInstruct = []
     for f in funcDef:
-        functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local)
-        for node in f[1].body:
+        functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local, proerties.re)
+        local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, f[0])
+        local_alloc.generate()  # generating local vars, args and return
+        for node in f[1].body: #translating function body
             functional_level.visit(node)
         fInstruct = fInstruct + functional_level.finalize()
+        fe = FunctionEntry(fInstruct, f[0]) 
+        fe.generate()  # printing body before top level  
     
-    ep = EntryPoint(fInstruct + tlInstruct)
+    ep = EntryPoint(tlInstruct)
     ep.generate() 
 
 if __name__ == '__main__':
