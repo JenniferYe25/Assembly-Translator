@@ -76,7 +76,6 @@ class TopLevelProgram(ast.NodeVisitor):
         self.__access_memory(node.test.comparators[0], 'CPWA')
         # Branching is condition is not true (thus, inverted)
         self.__record_instruction(f'{inverted[type(node.test.ops[0])]} end_l_{loop_id}')
-        # print(node.body)
         # Visiting the body of the loop
         for contents in node.body:
             self.visit(contents)
@@ -110,13 +109,39 @@ class TopLevelProgram(ast.NodeVisitor):
         
         self.__record_instruction(f'NOP1', label = f'end_{loop_id}')
 
-    ####
-    ## Not handling function calls 
-    ####
-
     def visit_FunctionDef(self, node):
-        """We do not visit function definitions, they are not top level"""
-        pass
+        # print(dir(node))
+        # print(node.name, node.args, node.body)
+        # print(node.args.args)
+        function_name = node.name
+        arguments = node.args.args
+
+        self.__record_instruction(f'SUBSP {(*2}, i', label = f'end_{function_name}')
+        for arg in arguments:
+            self.visit(arg)
+        
+        for contents in node.body:
+            # print(contents)
+            self.visit(contents)
+        
+
+    
+    def visit_arg(self, node):
+        print(node.arg)
+    #     return super().visit_arg(node)
+        # print(dir(arguments))
+        # print(arguments)
+        # print(function_name, arguments)
+        # print(node.body[0])
+        # body = node.body[0]
+        # self.visit(body)
+        # print("hello")
+        # for contents in body:
+            # self.visit(contents)
+        # print(dir(node.body[0]))
+        # print(dir(node.body[1]))
+        # print(node.body[1].value)
+        # print(node.body[0].args.args) #function arguments
 
     ####
     ## Helper functions to 
