@@ -1,20 +1,20 @@
 import ast
 from itertools import permutations
+from visitors.GlobalVariables import GlobalVariableExtraction
 import string
 
-class LocalVariableExtraction(ast.NodeVisitor):
+class LocalVariableExtraction(GlobalVariableExtraction):
     """ 
-        We extract all the left hand side of the global (top-level) assignments
+        We extract all function arguments, local variables and 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, vars) -> None:
         super().__init__()
-        self.local = set()
-        self.param = set()
-        self.ret = set()
-        self.vars = dict()
+        self.local = set()  
+        self.param = set() # tuple()
+        self.vars = vars
         self.gen = self.get_name()
-
+        
     def visit_Assign(self, node):
         if len(node.targets) != 1:
             raise ValueError("Only unary assignments are supported")
@@ -66,7 +66,7 @@ class LocalVariableExtraction(ast.NodeVisitor):
             self.vars[node.targets[0].id] = var
                     
             node.targets[0].id = var
-        self.param.add(node.arg)
+        self.param.add(node.arg) 
     
     def get_name(self):
         i = 0  # length of new rename
@@ -76,7 +76,7 @@ class LocalVariableExtraction(ast.NodeVisitor):
             for p in possible:
                 yield ''.join(p)
             i += 1
-            possible = permutations(string.ascii_lowercase, i)  #only permutate all the possible names of length n
+            possible = permutations(string.ascii_uppercase, i)  #only permutate all the possible names of length n
 
     def get_next(self):
         next_name = next(self.gen)

@@ -1,7 +1,5 @@
 import ast
 
-from visitors.FunctionVariables import LocalVariableExtraction
-
 LabeledInstruction = tuple[str, str]
 
 class TopLevelProgram(ast.NodeVisitor):
@@ -117,9 +115,8 @@ class TopLevelProgram(ast.NodeVisitor):
     ####
 
     def visit_FunctionDef(self, node):
-        function = LocalVariableExtraction()
-        function.visit(node)
-
+        """We do not visit function definitions, they are not top level"""
+        pass
 
     ####
     ## Helper functions to 
