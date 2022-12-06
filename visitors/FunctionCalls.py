@@ -4,11 +4,12 @@ import ast
 class FunctionalLevel(TopLevelProgram):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars, locals) -> None:
+    def __init__(self, entry_point, vars, locals, re = None) -> None:
         super().__init__(entry_point, vars)
         self.locals = locals
         self.instructions = [(entry_point,'SUBSP ' +
                                   str(len(self.locals)*2) + ', i')]
+        self.re = re
 
     def finalize(self):
         self.instructions.append((None, 'ADDSP ' +
@@ -21,7 +22,7 @@ class FunctionalLevel(TopLevelProgram):
         if node.targets[0].id in self.locals:
             self.current_variable = self.locals[node.targets[0].id]
         else:
-            self.current_variable = node.targers[0].id
+            self.current_variable = node.targets[0].id
 
         # visiting the left part, now knowing where to store the result
         self.visit(node.value)
@@ -51,8 +52,14 @@ class FunctionalLevel(TopLevelProgram):
                 # We are only supporting integers for now
                 super().record_instruction(f'DECO {node.args[0].id},d')
             case _:
-                raise ValueError(f'Unsupported function call: { node.func.id}')
+                self.record_instruction(f'CALL {node.func.id}')
 
+    def visit_Return(self, node):
+        # self.visit(node.value)
+        if type(node.value) == ast.Name:
+            self.visit(node.value)
+            super().record_instruction(f'STWA {self.re},s')
+            
     def access_memory(self, node, instruction, label=None):
         if isinstance(node, ast.Constant):
             self.record_instruction(f'{instruction} {node.value}, i', label)
