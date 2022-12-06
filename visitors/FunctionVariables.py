@@ -15,6 +15,7 @@ class LocalVariableExtraction(GlobalVariableExtraction):
         self.vars = vars
         self.r_num = 0
         self.re = False
+        self.globe = set()
         self.gen = self.get_name()
         
     def visit_Assign(self, node):
@@ -22,10 +23,11 @@ class LocalVariableExtraction(GlobalVariableExtraction):
             raise ValueError("Only unary assignments are supported")
 
         var = node.targets[0].id
-        if (var in self.vars or len(var) > 8): # rename
+        if(var in self.globe):  #skip all assigns if there is a global var
+            pass
+        elif (var in self.vars or len(var) > 8): # rename
             name = self.get_next()
             var = name                
-            # self.vars[node.targets[0].id] = var
             self.local[node.targets[0].id] = var
         else:
             self.local[node.targets[0].id] = var
@@ -52,8 +54,11 @@ class LocalVariableExtraction(GlobalVariableExtraction):
         self.args.add(node.arg) 
     
     def visit_Return(self, node):
-        self.re = 'r'+str(self.retun_num())
-        # self.vars[self.re] = ''
+        self.re = 'r'+str(self.retun_num())  
+        #don't need to check if in var or add in vars since there will never be in instance when a label has numbers
+    
+    def visit_Global(self, node):
+        self.globe = {name for name in node.names}
 
     ####
     ## Helper functions for renaming generator

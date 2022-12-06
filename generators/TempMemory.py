@@ -12,7 +12,7 @@ class TempMemoryAllocation():
         print('; local variables')
         local_count = len(self.local)
         for n in self.local:
-            print(f'{str(n+":"):<9}\t.EQUATE', str(local_count*2-2))
+            print(f'{str(self.local[n]+":"):<9}\t.EQUATE', str(local_count*2-2))
             local_count -= 1
 
         print('; parameters')
