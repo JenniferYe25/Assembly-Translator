@@ -45,7 +45,6 @@ def process(input_file, root_node):
   
     fInstruct = []
     id = top_level.elem_id
-    print(id)
     for f in funcDef:
         functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local, id, proerties.re)
         local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, f[0])

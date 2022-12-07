@@ -64,6 +64,7 @@ class TopLevelProgram(ast.NodeVisitor):
                 self.record_instruction(f'DECO {node.args[0].id},d')
             case _:
                 self.record_instruction(f'CALL {node.func.id}')
+                self.record_instruction(f'ADDSP {len(node.args)*2},i')
 
     ####
     # Handling While loops (only variable OP variable)
