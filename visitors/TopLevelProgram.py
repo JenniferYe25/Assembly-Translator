@@ -19,7 +19,7 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def finalize(self):
         self.instructions.append((None, '.END'))
-        return (self.instructions, self.funcDef)
+        return (self.instructions, self.funcDef, self.funcNames)
 
     ####
     # Handling Assignments (variable = ...)

@@ -5,10 +5,11 @@ import ast
 class FunctionalLevel(TopLevelProgram):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars, locals, args, lable, re=None) -> None:
+    def __init__(self, entry_point, vars, locals, args, funcNames, lable, re=None) -> None:
         super().__init__(entry_point, vars, lable)
         self.locals = locals
         self.args = args
+        self.funcNames = funcNames
         self.instructions = [(entry_point, 'SUBSP ' +
                               str(len(self.locals)*2) + ',i')]
         self.re = re
@@ -20,19 +21,34 @@ class FunctionalLevel(TopLevelProgram):
         return self.instructions
 
     def visit_Assign(self, node):
-        # remembering the name of the target
-        if node.targets[0].id in self.locals:
-            self.current_variable = self.locals[node.targets[0].id]
-        else:
-            self.current_variable = node.targets[0].id
 
-        # visiting the left part, now knowing where to store the result
-        self.visit(node.value)
-        if self.should_save:
-            super().record_instruction(f'STWA {self.current_variable},s')
+        if (isinstance(node.value, ast.Call)
+                and node.value.func.id in self.funcNames):
+            self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
+
+            for i, a in enumerate(node.value.args):
+                self.record_instruction(f'LDWA {a.id},d')
+                self.record_instruction(f'STWA {i*2},s')
+
+            self.record_instruction(f'CALL {node.value.func.id}')
+            self.record_instruction(f'ADDSP {len(node.value.args)*2},i')
+            self.record_instruction(f'LDWA 0,s')
+            self.record_instruction(f'STWA {node.targets[0].id},d')
+            self.record_instruction(f'ADDSP 2,i')
         else:
-            self.should_save = True
-        self.current_variable = None
+            # remembering the name of the target
+            if node.targets[0].id in self.locals:
+                self.current_variable = self.locals[node.targets[0].id]
+            else:
+                self.current_variable = node.targets[0].id
+
+            # visiting the left part, now knowing where to store the result
+            self.visit(node.value)
+            if self.should_save:
+                super().record_instruction(f'STWA {self.current_variable},s')
+            else:
+                self.should_save = True
+            self.current_variable = None
 
     def visit_Name(self, node):
         if node.id in self.locals:
@@ -52,7 +68,19 @@ class FunctionalLevel(TopLevelProgram):
                 # We are only supporting integers for now
                 super().record_instruction(f'DECO {node.args[0].id},s')
             case _:
-                self.record_instruction(f'CALL {node.func.id}')
+                if (isinstance(node, ast.Call)
+                        and node.func.id in self.funcNames):
+
+                    if node.args:
+                        self.record_instruction(f'SUBSP {len(node.args)*2},i')
+
+                    for i, a in enumerate(node.args):
+                        self.record_instruction(f'LDWA {a.id},d')
+                        self.record_instruction(f'STWA {i*2},s')
+
+                    self.record_instruction(f'CALL {node.func.id}')
+                    if node.args:
+                        self.record_instruction(f'ADDSP {len(node.args)*2},i')
 
     def visit_Return(self, node):
         # self.visit(node.value)

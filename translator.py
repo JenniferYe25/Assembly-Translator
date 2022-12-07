@@ -41,7 +41,7 @@ def process(input_file, root_node):
 
     top_level = TopLevelProgram('tl', extractor.vars)
     top_level.visit(root_node)
-    tlInstruct, funcDef = top_level.finalize()
+    tlInstruct, funcDef, funcNames = top_level.finalize()
 
     fInstruct = []
     id = top_level.elem_id
@@ -50,7 +50,7 @@ def process(input_file, root_node):
         properties.visit(f[1])
 
         functional_level = FunctionalLevel(
-            f[0], extractor.vars, properties.local, properties.args, id, properties.re)
+            f[0], extractor.vars, properties.local, properties.args, funcNames, id, properties.re)
         local_alloc = TempMemoryAllocation(
             properties.local, properties.args, properties.re, f[0])
         local_alloc.generate()  # generating local vars, args and return
