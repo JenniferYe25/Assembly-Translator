@@ -4,8 +4,8 @@ import ast
 class FunctionalLevel(TopLevelProgram):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars, locals, re = None) -> None:
-        super().__init__(entry_point, vars)
+    def __init__(self, entry_point, vars, locals, lable, re = None) -> None:
+        super().__init__(entry_point, vars, lable)
         self.locals = locals
         self.instructions = [(entry_point,'SUBSP ' +
                                   str(len(self.locals)*2) + ', i')]

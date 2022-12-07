@@ -44,15 +44,18 @@ def process(input_file, root_node):
     proerties.visit(funcDef[0][1])
   
     fInstruct = []
+    id = top_level.elem_id
+    print(id)
     for f in funcDef:
-        functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local, proerties.re)
+        functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local, id, proerties.re)
         local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, f[0])
         local_alloc.generate()  # generating local vars, args and return
         for node in f[1].body: #translating function body
             functional_level.visit(node)
-        # fInstruct = fInstruct + functional_level.finalize()
+        fInstruct = fInstruct + functional_level.finalize()
         fe = FunctionEntry( functional_level.finalize(), f[0]) 
         fe.generate()  # printing body before top level  
+        id = functional_level.elem_id
     
     ep = EntryPoint(tlInstruct)
     ep.generate() 

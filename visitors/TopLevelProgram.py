@@ -6,14 +6,14 @@ LabeledInstruction = tuple[str, str]
 class TopLevelProgram(ast.NodeVisitor):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars) -> None:
+    def __init__(self, entry_point, vars, lable= 0) -> None:
         super().__init__()
         self.functions = list()
         self.instructions = list()
         self.record_instruction('NOP1', label=entry_point)
         self.should_save = True
         self.current_variable = None
-        self.elem_id = 0
+        self.elem_id = lable
         self.vars = vars
 
     def finalize(self):
@@ -89,6 +89,7 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_If(self, node):
         loop_id = self.identify()
+        print(loop_id)
         inverted = self.conditons()
         self.access_memory(node.test.left, 'LDWA', label=f'if_{loop_id}')
         self.access_memory(node.test.comparators[0], 'CPWA')
