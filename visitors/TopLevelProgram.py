@@ -119,7 +119,6 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_If(self, node):
         loop_id = self.identify()
-        print(loop_id)
         inverted = self.conditons()
         self.access_memory(node.test.left, 'LDWA', label=f'if_{loop_id}')
         self.access_memory(node.test.comparators[0], 'CPWA')

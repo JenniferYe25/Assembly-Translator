@@ -19,8 +19,10 @@ class GlobalVariableExtraction(ast.NodeVisitor):
 
         var = node.targets[0].id
         if (var not in self.vars):
-            if (len(var)> 8):  #checks if the variable name is greater than 8 characters long
-                name = self.get_next()
+            if (len(var)> 8 or var in self.vars.values()):  #checks if the variable name is greater than 8 characters long
+                while var in self.vars.values() or var in self.vars: # making sure that no other rename has the new name
+                    name = self.get_next()
+                    var = name
                 if (var[0] == '_'): #preserves constant naming convention
                     if len(name) > 8:
                         var = var[0]+(name[:-1]).upper()

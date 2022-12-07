@@ -8,12 +8,12 @@ class LocalVariableExtraction(GlobalVariableExtraction):
         We extract all function arguments, local variables and 
     """
 
-    def __init__(self, vars) -> None:
+    def __init__(self, vars, id) -> None:
         super().__init__()
         self.local = dict()  
         self.args = set() 
         self.vars = vars
-        self.r_num = 0
+        self.r_num = id
         self.re = False
         self.globe = set()
         self.gen = self.get_name()
@@ -25,12 +25,15 @@ class LocalVariableExtraction(GlobalVariableExtraction):
         var = node.targets[0].id
         if(var in self.globe):  #skip all assigns if there is a global var
             pass
-        elif (var in self.vars or len(var) > 8): # rename
-            name = self.get_next()
-            var = name                
+        elif (var in self.vars or var in self.vars.values() or len(var) > 8): # rename
+            while (var in self.vars or var in self.vars.values()):
+                name = self.get_next()
+                var = name                
             self.local[node.targets[0].id] = var
+            self.vars[node.targets[0].id] = var
         else:
             self.local[node.targets[0].id] = var
+            self.vars[node.targets[0].id] = var
         
 
     def visit_FunctionDef(self, node):
@@ -43,18 +46,17 @@ class LocalVariableExtraction(GlobalVariableExtraction):
             self.visit(contents)
     
     def visit_arg(self, node):
-        var = node.arg
-        if (var not in self.vars):
-            if (len(var)> 8):  #checks if the variable name is greater than 8 characters long
-                name = self.get_next()
-                var = name
-            self.vars[node.arg] = var
-            node.arg = var
-        
+        var = node.arg        
+        while len(var)> 8 or var in self.vars or var in self.vars.values() :  #checks if the variable name is greater than 8 characters long
+            name = self.get_next()
+            var = name
+        self.vars[node.arg] = var
+        node.arg = var        
         self.args.add(node.arg) 
     
     def visit_Return(self, node):
         self.re = 'r'+str(self.retun_num())  
+
         #don't need to check if in var or add in vars since there will never be in instance when a label has numbers
     
     def visit_Global(self, node):
@@ -81,5 +83,6 @@ class LocalVariableExtraction(GlobalVariableExtraction):
         return next_name
     
     def retun_num(self):
+        re = self.r_num
         self.r_num = self.r_num + 1
-        return self.r_num
+        return re

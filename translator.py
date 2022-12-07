@@ -43,13 +43,12 @@ def process(input_file, root_node):
     top_level.visit(root_node)
     tlInstruct, funcDef = top_level.finalize()
 
-    if funcDef:
-        properties = LocalVariableExtraction(extractor.vars)
-        properties.visit(funcDef[0][1])
-
     fInstruct = []
     id = top_level.elem_id
     for f in funcDef:
+        properties = LocalVariableExtraction(extractor.vars, id)
+        properties.visit(f[1])
+
         functional_level = FunctionalLevel(
             f[0], extractor.vars, properties.local, properties.args, id, properties.re)
         local_alloc = TempMemoryAllocation(
