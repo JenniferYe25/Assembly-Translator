@@ -1,16 +1,11 @@
-def zero(n):
-    a = 0
-    return a
+def mult(x, y):
+    result = 0
+    while y > 0:
+        result = result + x
+        y = y - 1
+    return result
 
-# def succ(n):
-#     return n + 1
-
-# def pred(n):
-#     return n - 1
-
-# def add(a,b):
-#     if zero(b):
-#         return a
-#     else:
-#         return add(succ(a), pred(b))
-
+a = 5
+b = 4
+val = mult(a, b)
+print(val)
