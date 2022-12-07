@@ -6,9 +6,10 @@ LabeledInstruction = tuple[str, str]
 class TopLevelProgram(ast.NodeVisitor):
     """We supports assignments and input/print calls"""
 
-    def __init__(self, entry_point, vars, lable= 0) -> None:
+    def __init__(self, entry_point, vars, lable=0) -> None:
         super().__init__()
-        self.functions = list()
+        self.funcDef = list()
+        self.funcNames = list()
         self.instructions = list()
         self.record_instruction('NOP1', label=entry_point)
         self.should_save = True
@@ -18,22 +19,39 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def finalize(self):
         self.instructions.append((None, '.END'))
-        return (self.instructions, self.functions)
+        return (self.instructions, self.funcDef)
 
     ####
     # Handling Assignments (variable = ...)
     ####
 
     def visit_Assign(self, node):
-        # remembering the name of the target
-        self.current_variable = self.rename(node.targets[0].id)
-        # visiting the left part, now knowing where to store the result
-        self.visit(node.value)
-        if self.should_save:
-            self.record_instruction(f'STWA {self.current_variable},d')
+        if (isinstance(node.value, ast.Call)
+                and node.value.func.id in self.funcNames):
+            self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
+
+            for i, a in enumerate(node.value.args):
+                self.record_instruction(f'LDWA {a.id},d')
+                self.record_instruction(f'STWA {i*2},s')
+
+            self.record_instruction(f'CALL {node.value.func.id}')
+            self.record_instruction(f'ADDSP {len(node.value.args)*2},i')
+            self.record_instruction(f'LDWA 0,s')
+            self.record_instruction(f'STWA {node.targets[0].id},d')
+            self.record_instruction(f'ADDSP 2,i')
+
         else:
-            self.should_save = True
-        self.current_variable = None
+            temp = self.rename(node.targets[0].id)
+            if not (temp[0] == "_" and temp[1:].isupper()):
+                # remembering the name of the target
+                self.current_variable = temp
+                # visiting the left part, now knowing where to store the result
+                self.visit(node.value)
+                if self.should_save:
+                    self.record_instruction(f'STWA {self.current_variable},d')
+                else:
+                    self.should_save = True
+                self.current_variable = None
 
     def visit_Constant(self, node):
         self.record_instruction(f'LDWA {node.value},i')
@@ -63,8 +81,19 @@ class TopLevelProgram(ast.NodeVisitor):
                 # We are only supporting integers for now
                 self.record_instruction(f'DECO {node.args[0].id},d')
             case _:
-                self.record_instruction(f'CALL {node.func.id}')
-                self.record_instruction(f'ADDSP {len(node.args)*2},i')
+                if (isinstance(node, ast.Call)
+                        and node.func.id in self.funcNames):
+
+                    if node.args:
+                        self.record_instruction(f'SUBSP {len(node.args)*2},i')
+
+                    for i, a in enumerate(node.args):
+                        self.record_instruction(f'LDWA {a.id},d')
+                        self.record_instruction(f'STWA {i*2},s')
+
+                    self.record_instruction(f'CALL {node.func.id}')
+                    if node.args:
+                        self.record_instruction(f'ADDSP {len(node.args)*2},i')
 
     ####
     # Handling While loops (only variable OP variable)
@@ -123,7 +152,8 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         """We do not visit function definitions, they are not top level"""
-        self.functions.append((node.name, node))
+        self.funcDef.append((node.name, node))
+        self.funcNames.append(node.name)
 
     ####
     # Helper functions to
@@ -136,8 +166,14 @@ class TopLevelProgram(ast.NodeVisitor):
         if isinstance(node, ast.Constant):
             self.record_instruction(f'{instruction} {node.value},i', label)
         else:
-            self.record_instruction(
-                f'{instruction} {self.rename(node.id)},d', label)
+            temp = self.rename(node.id)
+
+            if temp[0] == "_" and temp[1:].isupper():
+                self.record_instruction(
+                    f'{instruction} {temp},i', label)
+            else:
+                self.record_instruction(
+                    f'{instruction} {temp},s', label)
 
     def identify(self):
         result = self.elem_id

@@ -1,9 +1,9 @@
 
 _UNIV = 42
 
-def my_func(a,b,c):
+def my_func():
     value = int(input())
     result = value + _UNIV
     print(result)
 
-my_func(1,2,3)
+my_func()

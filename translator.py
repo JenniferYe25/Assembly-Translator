@@ -9,6 +9,7 @@ from generators.StaticMemoryAllocation import StaticMemoryAllocation
 from generators.EntryPoint import EntryPoint
 from generators.TempMemory import TempMemoryAllocation
 
+
 def main():
     input_file, print_ast = process_cli()
     with open(input_file) as f:
@@ -18,7 +19,8 @@ def main():
         print(ast.dump(node, indent=2))
     else:
         process(input_file, node)
-    
+
+
 def process_cli():
     """"Process Command Line Interface options"""
     parser = argparse.ArgumentParser()
@@ -26,6 +28,7 @@ def process_cli():
     parser.add_argument('--ast-only', default=False, action='store_true')
     args = vars(parser.parse_args())
     return args['f'], args['ast_only']
+
 
 def process(input_file, root_node):
     print(f'; Translating {input_file}')
@@ -40,24 +43,29 @@ def process(input_file, root_node):
     top_level.visit(root_node)
     tlInstruct, funcDef = top_level.finalize()
 
-    proerties = LocalVariableExtraction(extractor.vars)
-    proerties.visit(funcDef[0][1])
-  
+    if funcDef:
+        properties = LocalVariableExtraction(extractor.vars)
+        properties.visit(funcDef[0][1])
+
     fInstruct = []
     id = top_level.elem_id
     for f in funcDef:
-        functional_level = FunctionalLevel(f[0], extractor.vars, proerties.local, id, proerties.re)
-        local_alloc = TempMemoryAllocation(proerties.local, proerties.args, proerties.re, f[0])
+        functional_level = FunctionalLevel(
+            f[0], extractor.vars, properties.local, properties.args, id, properties.re)
+        local_alloc = TempMemoryAllocation(
+            properties.local, properties.args, properties.re, f[0])
         local_alloc.generate()  # generating local vars, args and return
-        for node in f[1].body: #translating function body
+        for node in f[1].body:  # translating function body
             functional_level.visit(node)
-        fInstruct = fInstruct + functional_level.finalize()
-        fe = FunctionEntry( functional_level.finalize(), f[0]) 
-        fe.generate()  # printing body before top level  
+        temp = functional_level.finalize()
+        fInstruct = fInstruct + temp
+        fe = FunctionEntry(temp, f[0])
+        fe.generate()  # printing body before top level
         id = functional_level.elem_id
-    
+
     ep = EntryPoint(tlInstruct)
-    ep.generate() 
+    ep.generate()
+
 
 if __name__ == '__main__':
     main()
