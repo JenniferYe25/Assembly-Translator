@@ -15,8 +15,8 @@ my_func: SUBSP   2,i         ; get local
          STWA    return,s       
          ADDSP   2,i         ; pop local
          RET                 
-program: SUBSP   4,i         
-         DECI    x,d   
+program: DECI    x,d
+         SUBSP   4,i             
          LDWA    x,d      
          STWA    0,s         
          CALL    my_func     
