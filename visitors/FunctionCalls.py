@@ -21,20 +21,33 @@ class FunctionalLevel(TopLevelProgram):
         return self.instructions
 
     def visit_Assign(self, node):
-
         if (isinstance(node.value, ast.Call)
                 and node.value.func.id in self.funcNames):
             self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
 
             for i, a in enumerate(node.value.args):
-                self.record_instruction(f'LDWA {a.id},d')
+                if a.id in self.locals:
+                    self.record_instruction(f'LDWA {self.locals[a.id]},d')
+                elif a.id in self.vars:
+                    self.record_instruction(f'LDWA {self.vars[a.id]},d')
+                else:
+                    self.record_instruction(f'LDWA {a.id},d')
                 self.record_instruction(f'STWA {i*2},s')
 
             self.record_instruction(f'CALL {node.value.func.id}')
             self.record_instruction(f'ADDSP {len(node.value.args)*2},i')
             self.record_instruction(f'LDWA 0,s')
-            self.record_instruction(f'STWA {node.targets[0].id},d')
+            if node.targets[0].id in self.locals:
+                self.record_instruction(
+                    f'STWA {self.locals[node.targets[0].id]},d')
+            elif node.targets[0].id in self.vars:
+                self.record_instruction(
+                    f'STWA {self.vars[node.targets[0].id]},d')
+            else:
+                self.record_instruction(
+                    f'STWA {node.targets[0].id},d')
             self.record_instruction(f'ADDSP 2,i')
+            
         else:
             # remembering the name of the target
             if node.targets[0].id in self.locals:
@@ -75,7 +88,12 @@ class FunctionalLevel(TopLevelProgram):
                         self.record_instruction(f'SUBSP {len(node.args)*2},i')
 
                     for i, a in enumerate(node.args):
-                        self.record_instruction(f'LDWA {a.id},d')
+                        if a.id in self.vars:
+                            self.record_instruction(
+                                f'STWA {self.vars[a.id]},d')
+                        else:
+                            self.record_instruction(
+                                f'STWA {a.id},d')
                         self.record_instruction(f'STWA {i*2},s')
 
                     self.record_instruction(f'CALL {node.func.id}')
