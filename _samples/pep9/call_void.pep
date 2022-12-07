@@ -1,10 +1,10 @@
          BR      program
-_UNIV:   .WORD 42
+_UNIV:   .EQUATE 42
 value:   .EQUATE 2
 result:  .EQUATE 0
 my_func: SUBSP 4,i
-         DECI value, i
-         LDWA _UNIV, d
+         DECI value, s 
+         LDWA _UNIV, i
          ADDA value, s
          STWA result, s
          DECO result, s
