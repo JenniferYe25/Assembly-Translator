@@ -45,7 +45,6 @@ def process(input_file, root_node):
 
     fInstruct = []
     id = top_level.elem_id
-    # print(extractor.vars)
 
     for f in funcDef:
         properties = LocalVariableExtraction(extractor.vars, id)
