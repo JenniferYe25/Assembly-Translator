@@ -15,15 +15,11 @@ class FunctionalLevel(TopLevelProgram):
         self.re = re
 
     def finalize(self):
-        self.instructions.append((None, 'ADDSP ' +
-                                  str(len(self.locals)*2)+',i'))
-        self.instructions.append((None, 'RET'))
         return self.instructions
 
     def visit_Assign(self, node):
         if (isinstance(node.value, ast.Call)
                 and node.value.func.id in self.funcNames):
-                
 
             for i, a in enumerate(node.value.args):
                 if a.id in self.locals:
@@ -32,7 +28,8 @@ class FunctionalLevel(TopLevelProgram):
                     self.record_instruction(f'LDWA {self.vars[a.id]},d')
                 else:
                     self.record_instruction(f'LDWA {a.id},s')
-                self.record_instruction(f'STWA {-1*(len(node.value.args)*2-i*2+2)},s')
+                self.record_instruction(
+                    f'STWA {-1*(len(node.value.args)*2-i*2+2)},s')
 
             self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
 
@@ -49,7 +46,7 @@ class FunctionalLevel(TopLevelProgram):
             else:
                 self.record_instruction(
                     f'STWA {node.targets[0].id},s')
-            
+
         else:
             # remembering the name of the target
             if node.targets[0].id in self.locals:
@@ -85,7 +82,7 @@ class FunctionalLevel(TopLevelProgram):
             case _:
                 if (isinstance(node, ast.Call)
                         and node.func.id in self.funcNames):
-                    
+
                     for i, a in enumerate(node.args):
                         if a.id in self.vars:
                             self.record_instruction(
@@ -95,7 +92,7 @@ class FunctionalLevel(TopLevelProgram):
                                 f'LDWA {a.id},d')
                         self.record_instruction(
                             f'STWA {-1*len(node.args)*2-i*2},s')
-                    
+
                     if node.args:
                         self.record_instruction(f'SUBSP {len(node.args)*2},i')
 
@@ -123,3 +120,16 @@ class FunctionalLevel(TopLevelProgram):
             else:
                 self.record_instruction(
                     f'{instruction} {temp},s', label)
+
+    def visit_Return(self, node):
+        if isinstance(node.value, ast.Constant):
+            self.instructions.append(
+                (None, 'LDWA' + {node.value.value} + 'i'))
+            self.instructions.append((None, 'STWA' + {self.re} + 's'))
+            self.instructions.append((None, 'ADDSP ' +
+                                      str(len(self.locals)*2)+',i'))
+            self.instructions.append((None, 'RET'))
+        else:
+            self.instructions.append((None, 'ADDSP ' +
+                                      str(len(self.locals)*2)+',i'))
+            self.instructions.append((None, 'RET'))

@@ -10,10 +10,10 @@ class TempMemoryAllocation():
     def generate(self):
         print('; Allocating Temp memory for ', self.name)
         print('; local variables')
-        local_count = len(self.local)
+        local_count = 1
         for n in self.local:
             print(f'{str(self.local[n]+":"):<9}\t.EQUATE', str(local_count*2-2))
-            local_count -= 1
+            local_count += 1
 
         print('; parameters')
         args_count = 1

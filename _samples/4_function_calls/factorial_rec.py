@@ -1,6 +1,5 @@
 
 def mult(a, b):
-    hi = 0
     mult_r = 0
     while b > 0:
         mult_r = mult_r + a
@@ -8,7 +7,6 @@ def mult(a, b):
     return mult_r
 
 def fac(n):
-    hi = 0
     if n == 0:
         return 1
     pred = n - 1
