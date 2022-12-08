@@ -39,14 +39,16 @@ class LocalVariableExtraction(GlobalVariableExtraction):
     def visit_FunctionDef(self, node):
         arguments = node.args.args
             
+        for contents in node.body:
+            self.visit(contents)
+
         for arg in arguments:
             self.visit(arg)
         
-        for contents in node.body:
-            self.visit(contents)
     
     def visit_arg(self, node):
-        var = node.arg        
+        var = node.arg
+        if var in self.local: del self.vars[var]; del self.local[var]      
         while len(var)> 8 or var in self.vars or var in self.vars.values() :  #checks if the variable name is greater than 8 characters long
             name = self.get_next()
             var = name
@@ -56,7 +58,6 @@ class LocalVariableExtraction(GlobalVariableExtraction):
     
     def visit_Return(self, node):
         self.re = 'r'+str(self.retun_num())  
-
         #don't need to check if in var or add in vars since there will never be in instance when a label has numbers
     
     def visit_Global(self, node):
