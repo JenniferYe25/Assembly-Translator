@@ -134,28 +134,33 @@ class TopLevelProgram(ast.NodeVisitor):
         inverted = self.conditons()
         self.access_memory(node.test.left, 'LDWA', label=f'if_{loop_id}')
         self.access_memory(node.test.comparators[0], 'CPWA')
-        self.record_instruction(
-            f'{inverted[type(node.test.ops[0])]} end_{loop_id}')
-
-        if hasattr(node, 'orelse') and node.orelse != []:
+        
+        if node.orelse != []:
+            # compare branch 
             if ast.If in [type(i) for i in node.orelse]:  # there is an else if
                 self.record_instruction(
                     f'{inverted[type(node.test.ops[0])]} if_{loop_id + 1}')
-                for contents in node.body:
-                    self.visit(contents)
-                self.record_instruction(f'BR end_{loop_id}')
-            else:  # there is an else
+            else:
                 self.record_instruction(
                     f'{inverted[type(node.test.ops[0])]} else_{loop_id}')
-                for contents in node.orelse:
-                    self.visit(contents)
-                self.record_instruction(f'BR end_{loop_id}')
+            
 
-            self.record_instruction(f'NOP1', label=f'else_{loop_id}')
             for contents in node.body:
                 self.visit(contents)
 
-        for contents in node.body:
+            # end branch
+            if ast.If in [type(i) for i in node.orelse]:  # there is an else if
+               self.record_instruction(f'BR end_{loop_id}')
+               
+            else: # there is an else
+                self.record_instruction(f'BR end_{loop_id}')
+                self.record_instruction(f'NOP1', label=f'else_{loop_id}')
+            for contents in node.orelse:
+                self.visit(contents)
+        else:
+            self.record_instruction(
+                    f'{inverted[type(node.test.ops[0])]} end_{loop_id}')
+            for contents in node.body:
                 self.visit(contents)
         self.record_instruction(f'NOP1', label=f'end_{loop_id}')
 
