@@ -100,11 +100,6 @@ class FunctionalLevel(TopLevelProgram):
                     if node.args:
                         self.record_instruction(f'ADDSP {len(node.args)*2},i')
 
-    def visit_Return(self, node):
-        # self.visit(node.value)
-        if type(node.value) == ast.Name:
-            self.visit(node.value)
-            super().record_instruction(f'STWA {self.re},s')
 
     def access_memory(self, node, instruction, label=None):
         if isinstance(node, ast.Constant):
@@ -124,12 +119,13 @@ class FunctionalLevel(TopLevelProgram):
     def visit_Return(self, node):
         if isinstance(node.value, ast.Constant):
             self.instructions.append(
-                (None, 'LDWA' + {node.value.value} + 'i'))
-            self.instructions.append((None, 'STWA' + {self.re} + 's'))
+                (None, 'LDWA ' + str(node.value.value) + ',i'))
+            self.instructions.append((None, 'STWA ' + str(self.re) + ',s'))
             self.instructions.append((None, 'ADDSP ' +
                                       str(len(self.locals)*2)+',i'))
             self.instructions.append((None, 'RET'))
         else:
+            self.record_instruction(f'STWA {self.re},s')
             self.instructions.append((None, 'ADDSP ' +
                                       str(len(self.locals)*2)+',i'))
             self.instructions.append((None, 'RET'))
