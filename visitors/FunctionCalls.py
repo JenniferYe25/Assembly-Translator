@@ -24,6 +24,8 @@ class FunctionalLevel(TopLevelProgram):
             for i, a in enumerate(node.value.args):
                 if a.id in self.locals:
                     self.record_instruction(f'LDWA {self.locals[a.id]},s')
+                elif self.vars[a.id] in self.args:
+                    self.record_instruction(f'LDWA {self.vars[a.id]},s')
                 elif a.id in self.vars:
                     self.record_instruction(f'LDWA {self.vars[a.id]},d')
                 else:
@@ -84,7 +86,10 @@ class FunctionalLevel(TopLevelProgram):
                         and node.func.id in self.funcNames):
 
                     for i, a in enumerate(node.args):
-                        if a.id in self.vars:
+                        if self.vars[a.id] in self.args:
+                            self.record_instruction(
+                                f'LDWA {self.vars[a.id]},s')
+                        elif a.id in self.vars:
                             self.record_instruction(
                                 f'LDWA {self.vars[a.id]},d')
                         else:
@@ -99,7 +104,6 @@ class FunctionalLevel(TopLevelProgram):
                     self.record_instruction(f'CALL {node.func.id}')
                     if node.args:
                         self.record_instruction(f'ADDSP {len(node.args)*2},i')
-
 
     def access_memory(self, node, instruction, label=None):
         if isinstance(node, ast.Constant):
@@ -125,6 +129,17 @@ class FunctionalLevel(TopLevelProgram):
                                       str(len(self.locals)*2)+',i'))
             self.instructions.append((None, 'RET'))
         else:
+            if node.value.id in self.locals:
+                self.record_instruction(f'LDWA {self.locals[node.value.id]},s')
+            elif self.vars[node.value.id] in self.args:
+                self.record_instruction(
+                    f'LDWA {self.vars[node.value.id]},s')
+            elif node.value.id in self.vars:
+                self.record_instruction(
+                    f'LDWA {self.vars[node.value.id]},d')
+            else:
+                self.record_instruction(
+                    f'LDWA {node.value.id},d')
             self.record_instruction(f'STWA {self.re},s')
             self.instructions.append((None, 'ADDSP ' +
                                       str(len(self.locals)*2)+',i'))
