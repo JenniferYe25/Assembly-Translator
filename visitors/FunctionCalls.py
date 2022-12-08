@@ -23,30 +23,32 @@ class FunctionalLevel(TopLevelProgram):
     def visit_Assign(self, node):
         if (isinstance(node.value, ast.Call)
                 and node.value.func.id in self.funcNames):
-            self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
+                
 
             for i, a in enumerate(node.value.args):
                 if a.id in self.locals:
-                    self.record_instruction(f'LDWA {self.locals[a.id]},d')
+                    self.record_instruction(f'LDWA {self.locals[a.id]},s')
                 elif a.id in self.vars:
                     self.record_instruction(f'LDWA {self.vars[a.id]},d')
                 else:
-                    self.record_instruction(f'LDWA {a.id},d')
-                self.record_instruction(f'STWA {i*2},s')
+                    self.record_instruction(f'LDWA {a.id},s')
+                self.record_instruction(f'STWA {-1*(len(node.value.args)*2-i*2+2)},s')
+
+            self.record_instruction(f'SUBSP {len(node.value.args)*2+2},i')
 
             self.record_instruction(f'CALL {node.value.func.id}')
             self.record_instruction(f'ADDSP {len(node.value.args)*2},i')
             self.record_instruction(f'LDWA 0,s')
+            self.record_instruction(f'ADDSP 2,i')
             if node.targets[0].id in self.locals:
                 self.record_instruction(
-                    f'STWA {self.locals[node.targets[0].id]},d')
+                    f'STWA {self.locals[node.targets[0].id]},s')
             elif node.targets[0].id in self.vars:
                 self.record_instruction(
                     f'STWA {self.vars[node.targets[0].id]},d')
             else:
                 self.record_instruction(
-                    f'STWA {node.targets[0].id},d')
-            self.record_instruction(f'ADDSP 2,i')
+                    f'STWA {node.targets[0].id},s')
             
         else:
             # remembering the name of the target
@@ -83,18 +85,19 @@ class FunctionalLevel(TopLevelProgram):
             case _:
                 if (isinstance(node, ast.Call)
                         and node.func.id in self.funcNames):
-
-                    if node.args:
-                        self.record_instruction(f'SUBSP {len(node.args)*2},i')
-
+                    
                     for i, a in enumerate(node.args):
                         if a.id in self.vars:
                             self.record_instruction(
-                                f'STWA {self.vars[a.id]},d')
+                                f'LDWA {self.vars[a.id]},d')
                         else:
                             self.record_instruction(
-                                f'STWA {a.id},d')
-                        self.record_instruction(f'STWA {i*2},s')
+                                f'LDWA {a.id},d')
+                        self.record_instruction(
+                            f'STWA {-1*len(node.args)*2-i*2},s')
+                    
+                    if node.args:
+                        self.record_instruction(f'SUBSP {len(node.args)*2},i')
 
                     self.record_instruction(f'CALL {node.func.id}')
                     if node.args:

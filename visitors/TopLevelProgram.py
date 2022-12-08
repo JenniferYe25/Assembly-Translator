@@ -98,10 +98,10 @@ class TopLevelProgram(ast.NodeVisitor):
                     for i, a in enumerate(node.args):
                         if a.id in self.vars:
                             self.record_instruction(
-                                f'STWA {self.vars[a.id]},d')
+                                f'LDWA {self.vars[a.id]},d')
                         else:
                             self.record_instruction(
-                                f'STWA {a.id},d')
+                                f'LDWA {a.id},d')
                         self.record_instruction(f'STWA {i*2},s')
 
                     self.record_instruction(f'CALL {node.func.id}')
