@@ -15,6 +15,10 @@ class FunctionalLevel(TopLevelProgram):
         self.re = re
 
     def finalize(self):
+        if not self.re:
+            self.instructions.append((None, 'ADDSP ' +
+                                      str(len(self.locals)*2)+',i'))
+            self.instructions.append((None, 'RET'))
         return self.instructions
 
     def visit_Assign(self, node):
